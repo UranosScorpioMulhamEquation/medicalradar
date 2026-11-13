@@ -10,6 +10,47 @@ import streamlit as st
 import streamlit.components.v1 as components
 import swisseph as swe
 from timezonefinder import TimezoneFinder
+import uuid
+# ==================== 1. Security (Fixed) ====================
+KEY_FILE = "license.key"
+
+def get_machine_id():
+    return hex(uuid.getnode())
+
+def generate_password(mid):
+    # مطابقة تامة لمنطق أداة فك الحماية الثابتة
+    digits = ''.join(filter(str.isdigit, mid))
+    if not digits: 
+        try:
+            digits = str(int(mid, 16))
+        except:
+            return "Error"
+    num = int(digits)
+    result = round(abs(num / 2 * 3.14))
+    return str(result)[:6]
+
+if 'authenticated' not in st.session_state:
+    st.session_state['authenticated'] = os.path.exists(KEY_FILE)
+
+if not st.session_state['authenticated']:
+    st.set_page_config(page_title="Security", layout="centered")
+    st.title("Security Activation - Ask the programmer for your password")
+    st.warning("Send your Machine ID to programmer email : mulham81ahmed@gmail.com ")
+
+    mid = get_machine_id()
+    st.info(f"Machine ID: {mid}")
+    pwd = st.text_input("Enter Activation Key:", type="password")
+    
+    if st.button("Activate"):
+        if pwd == generate_password(mid):
+            with open(KEY_FILE, "w") as f: 
+                f.write(pwd)
+            st.session_state['authenticated'] = True
+            st.rerun()
+        else:
+            st.error("Invalid Activation Key.")
+            
+    st.stop()
 
 # ==========================================
 # 0. إعداد مسار ملفات الـ Ephemeris
